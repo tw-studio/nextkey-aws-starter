@@ -1,0 +1,49 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "outDir": ".tsc",
+    "paths": {
+      "@/*": ["./*"],
+      "@components/*": ["src/components/*"],
+      "@db/*": ["db/*"],
+      "@models/*": ["models/*"],
+      "@resources/*": ["resources/*"],
+      "@server/*": ["server/*"],
+      "@src/*": ["src/*"],
+      "@types/*": ["types/*"],
+      "@utils/*": ["utils/*"],
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "tsBuildInfoFile": ".tsc/.tsbuildinfo"
+  },
+  "exclude": [
+    ".next",
+    ".tsc",
+    "cdk",
+    "node_modules",
+  ],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "ts-node": {
+    "esm": true
+  }
+}

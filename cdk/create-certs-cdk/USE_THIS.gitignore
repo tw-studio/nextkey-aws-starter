@@ -1,0 +1,63 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules/
+
+# Include all .env files in directory but not .secrets
+!.env/
+.secrets.js
+.production.secrets.js
+.local.env.js
+
+# self-signed certificates for local https testing
+*.key
+*.crt
+*.pem
+.localcerts/
+
+# next.js
+.next/
+**/.next/
+
+# export
+**/out/
+**/export/
+
+# production
+build/
+**/.tsc/
+
+# cdk synth
+cdk.out/
+
+# ignore
+.git-DISABLED/
+.ignore/
+.ignore-*
+
+# debug
+npm-debug.log*
+.pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+**/log/
+**/.log/
+
+# vercel
+.vercel
+
+# testing
+/coverage
+
+# yarn
+.pnp/
+.pnp.js
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# misc
+.DS_Store

@@ -1,0 +1,26 @@
+version: 0.0
+os: linux 
+files:
+  - source: /
+    destination: /home/ubuntu/server/my-app
+file_exists_behavior: OVERWRITE
+hooks:
+  # ApplicationStop:          # Gracefully stop or remove previous
+  BeforeInstall:              # Before agent copies files
+    - location: scripts/install-dependencies.sh
+      timeout: 240
+      # runas: ubuntu         # Changed codedeploy agent to run as ubuntu
+  AfterInstall:               # Configure app, permissions
+    - location: scripts/populate-secrets.sh
+      timeout: 240
+    - location: scripts/db-prod-migrate.sh
+      timeout: 240
+  ApplicationStart:           # Start app, restart stopped services
+    - location: scripts/start-server.sh
+      timeout: 360
+      # runas: ubuntu         # Changed codedeploy agent to run as ubuntu
+  # ValidateService:          # Verify deployment
+  # BeforeBlockTraffic:       # Before deregistering from LB
+  # AfterBlockraffic:         # After deregistering from LB
+  # BeforeAllowTraffic:       # Before registering with LB
+  # AfterAllowTraffic:        # After registering with LB

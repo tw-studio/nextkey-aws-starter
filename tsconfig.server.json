@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "module": "commonjs",
+    "noEmit": false,
+    "outDir": "./server/.tsc",
+    "tsBuildInfoFile": "./server/.tsc/.tsbuildinfo"
+  },
+  "include": ["server/**/*.ts"]
+}
