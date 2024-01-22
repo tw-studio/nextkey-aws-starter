@@ -1,5 +1,5 @@
 //
-// guest › index.spec.ts
+// one › index.spec.ts
 //
 // App must be running at process.env.URL_LOCAL
 //
@@ -18,8 +18,8 @@ test.meta({ priority: 'P3' })
 })
 
 test.meta({ priority: 'P2' })  
-  ('should show title that contains \'Welcome to Guest!\'', async t => {
+  ('should show title that contains \'Welcome to NextKey!\'', async t => {
   const title = Selector('title')
 
-  await t.expect(title.innerText).contains('Welcome to Guest!')
+  await t.expect(title.innerText).contains('Welcome to NextKey!')
 })

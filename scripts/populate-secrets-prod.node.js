@@ -24,13 +24,13 @@ const secrets = {
   hostname: '',
   jwtAud: '',
   jwtIss: '',
-  jwtSubGuest: '',
   jwtSubMain: '',
+  jwtSubOne: '',
   rootPwd,
   secretCookie: '',
   secretJWT: '',
-  secretKeyGuest: '',
   secretKeyMain: '',
+  secretKeyOne: '',
   useDatabase: '',
   useHttpsFromS3: '',
 }
@@ -46,12 +46,12 @@ const getSecretsCommand = new GetParametersCommand({
     `${ssmPath}hostname`,
     `${ssmPath}jwtAud`,
     `${ssmPath}jwtIss`,
-    `${ssmPath}jwtSubGuest`,
     `${ssmPath}jwtSubMain`,
+    `${ssmPath}jwtSubOne`,
     `${ssmPath}secretCookie`,
     `${ssmPath}secretJWT`,
-    `${ssmPath}secretKeyGuest`,
     `${ssmPath}secretKeyMain`,
+    `${ssmPath}secretKeyOne`,
   ],
   WithDecryption: true,
 })
@@ -152,13 +152,13 @@ ssm
       const hostname = '${secrets.hostname}'
       const jwtAud = '${secrets.jwtAud}'
       const jwtIss = '${secrets.jwtIss}'
-      const jwtSubGuest = '${secrets.jwtSubGuest}'
       const jwtSubMain = '${secrets.jwtSubMain}'
+      const jwtSubOne = '${secrets.jwtSubOne}'
       const rootPwd = '${secrets.rootPwd}'
       const secretCookie = '${secrets.secretCookie}'
       const secretJWT = '${secrets.secretJWT}'
-      const secretKeyGuest = '${secrets.secretKeyGuest}'
       const secretKeyMain = '${secrets.secretKeyMain}'
+      const secretKeyOne = '${secrets.secretKeyOne}'
       const useDatabase = '${secrets.useDatabase}'
       const useHttpsFromS3 = '${secrets.useHttpsFromS3}'
       const useHttpsLocal = '' // not used in production
@@ -172,13 +172,13 @@ ssm
         hostname,
         jwtAud,
         jwtIss,
-        jwtSubGuest,
         jwtSubMain,
+        jwtSubOne,
         rootPwd,
         secretCookie,
         secretJWT,
-        secretKeyGuest,
         secretKeyMain,
+        secretKeyOne,
         useDatabase,
         useHttpsFromS3,
         useHttpsLocal,

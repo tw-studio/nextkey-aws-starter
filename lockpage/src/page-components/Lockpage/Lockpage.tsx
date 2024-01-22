@@ -76,7 +76,7 @@ export default class Lockpage extends React.Component<
     return (
       <LockpageContainer>
         <Head>
-          <title>enter</title>
+          <title>welcome</title>
         </Head>
         <Main>
           <Lockbox

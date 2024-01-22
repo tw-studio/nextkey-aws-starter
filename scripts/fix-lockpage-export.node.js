@@ -6,7 +6,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const outDir = process.env.LOCKPAGE_DIR
+const outDir = process.env.LOCKPAGE_EXPORT_DIR
 const outIndex = `${outDir}/index.html`
 // const loginPath = process.env.NEXT_PUBLIC_LOGIN_PATH
 

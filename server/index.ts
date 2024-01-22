@@ -13,6 +13,7 @@ import express, {
   NextFunction as ExpressNextFunction,
 } from 'express'
 import asyncHandler from 'express-async-handler'
+import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import { SignJWT, decodeJwt, jwtVerify } from 'jose'
 import morgan from 'morgan'
@@ -22,6 +23,7 @@ import { Strings } from '../resources/Strings'
 import epoch from '../utils/epoch'
 import { getErrorMessage } from '../utils/errors'
 
+const env = process.env.TRUE_ENV ?? ''
 const expireInSecs = parseInt(process.env.JWT_EXP_IN_SEC ?? '604800', 10) // 1 week
 const expireInMillisecs = expireInSecs * 1000
 const hostname = process.env.HOSTNAME ?? ''
@@ -31,18 +33,30 @@ const isProdLocal = process.env.TRUE_ENV === 'production-local'
 const jwtAlg = process.env.JWT_ALG ?? ''
 const jwtAud = process.env.JWT_AUD ?? ''
 const jwtIss = process.env.JWT_ISS ?? ''
-const jwtSubGuest = process.env.JWT_SUB_GUEST ?? ''
 const jwtSubMain = process.env.JWT_SUB_MAIN ?? ''
+const jwtSubOne = process.env.JWT_SUB_ONE ?? ''
 const keyName = process.env.KEY_NAME ?? ''
+const limiterGeneral = rateLimit({
+  max: 300, // limit each IP to 300 general requests per windowMs
+  message: "You've made too many requests in a short period. Please wait an hour before trying again.",
+  windowMs: 60 * 60 * 1000, // 1 hour
+})
+const limiterUnlock = rateLimit({
+  max: 10, // limit each IP to 10 unlock requests per windowMs
+  message: "You've made too many login attempts in a short period. Please wait an hour before trying again.",
+  windowMs: 60 * 60 * 1000, // 1 hour
+})
 const loginPath = process.env.NEXT_PUBLIC_LOGIN_PATH ?? ''
-const lockpageStaticDir = path.resolve(__dirname, `../${process.env.LOCKPAGE_DIR}`)
+const lockpageExportDir = path.resolve(__dirname, `../${process.env.LOCKPAGE_EXPORT_DIR}`)
+const lockpagePublicDir = path.resolve(__dirname, `../${process.env.LOCKPAGE_PUBLIC_DIR}`)
 const port = parseInt(process.env.PORT ?? '3000', 10)
 const secretCookie = process.env.SECRET_COOKIE ?? ''
 const secretJwt = Buffer.from(process.env.SECRET_JWT ?? '', 'base64url')
-const secretKeyGuest = process.env.SECRET_KEY_GUEST ?? ''
 const secretKeyMain = process.env.SECRET_KEY_MAIN ?? ''
+const secretKeyOne = process.env.SECRET_KEY_ONE ?? ''
 const useHttpsFromS3 = process.env.USE_HTTPS_FROM_S3 === '1'
 const useHttpsLocal = process.env.USE_HTTPS_LOCAL === '1'
+const useNextKey = process.env.USE_NEXTKEY === '1'
 const useSignedCookie = false // ISSUE: reading signed cookie in middleware not currently supported
 // const isPRTest = process.env.TRUE_ENV === 'test-PR'
 
@@ -63,10 +77,17 @@ nextApp
   .then(() => {
 
     const app = express()
+    
+    // Redirect HTTP to HTTPS in production
+    if ((isProd && useHttpsFromS3) || (isProdLocal && useHttpsLocal)) {
+      app.use(redirectHTTP)
+    }
 
-    // Configure secure headers with helmet when using https
+    // Configure secure headers with helmet
     if (isProd && useHttpsFromS3) {
       app.use(setHelmet())
+    } else if (isProd && !useHttpsFromS3) {
+      app.use(setHelmet('prod-http')) // removes `https:` from CSP
     } else if ((isDev || isProdLocal) && useHttpsLocal) {
       app.use(setHelmet('local')) // allows 'unsafe-eval' in script-src
     }
@@ -78,12 +99,6 @@ nextApp
       app.use(morgan(':method :url :status :response-time ms - :res[content-length] :referrer ":remote-addr - :remote-user" ":user-agent"'))
     }
 
-    // Enforce HTTPS in production (done differently in dev)
-    // trustProtoHeader needed for load balancer (not working)
-    // if (!isDev) {
-    //   app.use(enforce.HTTPS({ trustProtoHeader: true }))
-    // }
-
     // Enable reading form data
     app.use(express.json())
     app.use(express.urlencoded({ extended: true }))
@@ -91,14 +106,14 @@ nextApp
     // Enable signed cookies
     app.use(cookieParser(secretCookie))
 
-    // Serve only the locksite before authentication and set with virtual path prefix
-    app.use(
-      loginPath,
-      express.static(lockpageStaticDir),
-    )
+    // Apply general rate limiter
+    app.use(limiterGeneral)
 
-    // Authenticate with keyphrase
-    app.post('/unlock', asyncHandler(unlockWithKey))
+    // Serve only the locksite before authentication and set with virtual path prefix
+    app.use(loginPath, express.static(lockpageExportDir))
+
+    // Authenticate with keyphrase (and strictly rate limit unlock requests)
+    app.post('/unlock', limiterUnlock, asyncHandler(unlockWithKey))
 
     // Ensure authenticated before serving the main site
     app.use(asyncHandler(authenticateJWT))
@@ -117,7 +132,17 @@ nextApp
         )
         .listen(port, () => {
           // eslint-disable-next-line no-console
-          console.log(`Node prod server (https): listening on port ${port}`)
+          console.log(`Node ${env} server (https): listening on port ${port}`)
+        })
+        .on('error', (err: unknown) => {
+          throw new Error(getErrorMessage(err))
+        })
+      
+      // Redirect HTTP to HTTPS in production
+      app
+        .listen(80, () => {
+          // eslint-disable-next-line no-console
+          console.log(`Node ${env} redirect server (http): listening on port 80`)
         })
         .on('error', (err: unknown) => {
           throw new Error(getErrorMessage(err))
@@ -135,21 +160,28 @@ nextApp
         )
         .listen(port, () => {
           // eslint-disable-next-line no-console
-          console.log(`Node dev server (https): listening on port ${port}`)
+          console.log(`Node ${env} server (https): listening on port ${port}`)
         })
         .on('error', (err: unknown) => {
           throw new Error(getErrorMessage(err))
         })
+      
+      // Redirect HTTP to HTTPS in prod-local only
+      if (isProdLocal) {
+        app
+          .listen(80, () => {
+            // eslint-disable-next-line no-console
+            console.log(`Node ${env} redirect server (http): listening on port 80`)
+          })
+          .on('error', (err: unknown) => {
+            throw new Error(getErrorMessage(err))
+          })
+      }
     } else {
       app
         .listen(port, () => {
           // eslint-disable-next-line no-console
-          console.log(
-            `Node ${
-              // eslint-disable-next-line
-              isDev ? 'dev server' : 'process ' + process.pid
-            }: listening on port ${port}`,
-          )
+          console.log(`Node ${env} server (http): listening on port ${port}`)
         })
         .on('error', (err: unknown) => {
           throw new Error(getErrorMessage(err))
@@ -174,18 +206,18 @@ function setHelmet(type?: string) {
           baseUri: [`'self'`],
           blockAllMixedContent: [],
           connectSrc: [`'self'`],
-          defaultSrc: [`'self'`],
-          fontSrc: [`'self'`, `data:`],
+          defaultSrc: [`'none'`],
+          fontSrc: [`'self'`, `https:`, `data:`],
           formAction: [`'self'`],
           frameAncestors: [`'none'`],
           frameSrc: [`'none'`],
-          imgSrc: [`'self'`, `data:`, `https://images.pexels.com`],
+          imgSrc: [`'self'`, `data:`],
           mediaSrc: [`'none'`],
           objectSrc: [`'none'`],
-          sandbox: ['allow-forms', 'allow-scripts', 'allow-same-origin'],
-          scriptSrc: [`'self'`, `'unsafe-eval'`],
+          sandbox: ['allow-forms', 'allow-scripts', 'allow-same-origin', 'allow-popups'],
+          scriptSrc: [`'self'`, `'unsafe-eval'`], // unsafe-eval in local only
           scriptSrcAttr: [`'none'`],
-          styleSrc: [`'self'`, `'unsafe-inline'`],
+          styleSrc: [`'self'`, `https:`, `'unsafe-inline'`], // unsafe-inline for Stitches
           upgradeInsecureRequests: [],
         },
       },
@@ -196,25 +228,55 @@ function setHelmet(type?: string) {
     })
   }
   
-  // Production headers
+  // Production headers without `https:`
+  if (type === 'prod-http') {
+    return helmet({
+      contentSecurityPolicy: {
+        directives: {
+          baseUri: [`'self'`],
+          blockAllMixedContent: [],
+          connectSrc: [`'self'`],
+          defaultSrc: [`'none'`],
+          fontSrc: [`'self'`, `data:`],
+          formAction: [`'self'`],
+          frameAncestors: [`'none'`],
+          frameSrc: [`'none'`],
+          imgSrc: [`'self'`, `data:`],
+          mediaSrc: [`'none'`],
+          objectSrc: [`'none'`],
+          sandbox: ['allow-forms', 'allow-scripts', 'allow-same-origin', 'allow-popups'],
+          scriptSrc: [`'self'`],
+          scriptSrcAttr: [`'none'`],
+          styleSrc: [`'self'`, `'unsafe-inline'`], // unsafe-inline for Stitches
+          upgradeInsecureRequests: [],
+        },
+      },
+      crossOriginEmbedderPolicy: true,
+      referrerPolicy: {
+        policy: ['no-referrer', 'strict-origin-when-cross-origin'],
+      },
+    })
+  }
+  
+  // Production headers (assumes https)
   return helmet({
     contentSecurityPolicy: {
       directives: {
         baseUri: [`'self'`],
         blockAllMixedContent: [],
         connectSrc: [`'self'`],
-        defaultSrc: [`'self'`],
-        fontSrc: [`'self'`, `data:`],
+        defaultSrc: [`'none'`],
+        fontSrc: [`'self'`, `https:`, `data:`],
         formAction: [`'self'`],
         frameAncestors: [`'none'`],
         frameSrc: [`'none'`],
-        imgSrc: [`'self'`, `data:`, `https://images.pexels.com`],
+        imgSrc: [`'self'`, `data:`],
         mediaSrc: [`'none'`],
         objectSrc: [`'none'`],
-        sandbox: ['allow-forms', 'allow-scripts', 'allow-same-origin'],
+        sandbox: ['allow-forms', 'allow-scripts', 'allow-same-origin', 'allow-popups'],
         scriptSrc: [`'self'`],
         scriptSrcAttr: [`'none'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
+        styleSrc: [`'self'`, `https:`, `'unsafe-inline'`], // unsafe-inline for Stitches
         upgradeInsecureRequests: [],
       },
     },
@@ -225,19 +287,27 @@ function setHelmet(type?: string) {
   })
 }
 
+// eslint-disable-next-line consistent-return
+function redirectHTTP(req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) {
+  if (req.protocol === 'http') {
+    return res.redirect(`https://${req.headers.host}${req.url}`)
+  }
+  next()
+}
+
 function bearsKey(req: ExpressRequest) {
   if (
     !(
       process.env.KEY_NAME
       && process.env.SECRET_KEY_MAIN
-      && process.env.SECRET_KEY_GUEST
+      && process.env.SECRET_KEY_ONE
     )
   ) {
     return false
   }
   return (
     req.body[process.env.KEY_NAME] === process.env.SECRET_KEY_MAIN
-    || req.body[process.env.KEY_NAME] === process.env.SECRET_KEY_GUEST
+    || req.body[process.env.KEY_NAME] === process.env.SECRET_KEY_ONE
   )
 }
 
@@ -246,7 +316,7 @@ async function unlockWithKey(req: ExpressRequest, res: ExpressResponse) {
     !(
       process.env.KEY_NAME
       && process.env.SECRET_KEY_MAIN
-      && process.env.SECRET_KEY_GUEST
+      && process.env.SECRET_KEY_ONE
       && process.env.JWT_ALG
       && process.env.JWT_AUD
       && process.env.JWT_ISS
@@ -263,8 +333,8 @@ async function unlockWithKey(req: ExpressRequest, res: ExpressResponse) {
       case secretKeyMain:
         jwtSub = jwtSubMain
         break
-      case secretKeyGuest:
-        jwtSub = jwtSubGuest
+      case secretKeyOne:
+        jwtSub = jwtSubOne
         break
       default:
         console.error('Key not recognized') // eslint-disable-line no-console
@@ -314,9 +384,9 @@ async function authenticateJWT(req: ExpressRequest, res: ExpressResponse, next: 
       && process.env.JWT_ISS
       && process.env.JWT_NAME
       && process.env.JWT_SUB_MAIN
-      && process.env.JWT_SUB_GUEST
-      && process.env.SECRET_JWT
+      && process.env.JWT_SUB_ONE
       && process.env.NEXT_PUBLIC_LOGIN_PATH
+      && process.env.SECRET_JWT
     )
   ) {
     console.error('Server environment variables not set') // eslint-disable-line no-console
@@ -329,15 +399,34 @@ async function authenticateJWT(req: ExpressRequest, res: ExpressResponse, next: 
       : ((req.cookies && req.cookies[process.env.JWT_NAME]) ?? '')
     try {
       if (requestJWT === '') {
-        // no cookie, silently redirect
-        res.redirect(303, process.env.NEXT_PUBLIC_LOGIN_PATH)
+        if (useNextKey) {
+          // when nextkey enabled and no cookie:
+          // first, handle special exceptions
+          if (req.path === '/robots.txt') {
+            const lockpageRobotsTxtPath = `${lockpagePublicDir}/robots.txt`
+            if (fs.existsSync(lockpageRobotsTxtPath)) {
+              const robotsTxt = fs.readFileSync(lockpageRobotsTxtPath)
+              res.type('text/plain')
+              res.send(robotsTxt)
+            } else {
+              res.type('text/plain')
+              res.send('User-agent: *\nDisallow: /')
+            }
+          } else {
+            // otherwise, silently redirect to nextkey
+            res.redirect(303, process.env.NEXT_PUBLIC_LOGIN_PATH)
+          }
+        } else {
+          // when not using NextKey, continue handling request
+          next()
+        }
       } else {
         const jwtDecoded = decodeJwt(requestJWT)
         const decodedSub = jwtDecoded.sub
         if (
           !(
             decodedSub === process.env.JWT_SUB_MAIN
-            || decodedSub === process.env.JWT_SUB_GUEST
+            || decodedSub === process.env.JWT_SUB_ONE
           )
         ) {
           throw new Error(`Invalid jwt sub: ${decodedSub}`)

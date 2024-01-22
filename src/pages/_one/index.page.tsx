@@ -1,6 +1,6 @@
 ////
 ///
-// guest › index.page.tsx
+// one › index.page.tsx
 
 import { GetServerSideProps } from 'next'
 

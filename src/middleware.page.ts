@@ -7,18 +7,20 @@ import type { NextRequest } from 'next/server'
 import { Strings } from '@resources/Strings'
 
 export function middleware(req: NextRequest) {
+  
   const activeIndex = parseInt(process.env.ACTIVE_INDEX ?? '0', 10)
   const cookieSecret = process.env.SECRET_COOKIE ?? ''
   const env = process.env.TRUE_ENV ?? process.env.NODE_ENV ?? 'development'
   const jwtName = process.env.JWT_NAME ?? 'access_token'
   const pathBases = [
     '/_main',
-    '/_guest',
+    '/_one',
   ]
   const { pathname } = req.nextUrl
   const publicFileRegEx = /\.(.*)$/
   const resUrl = req.nextUrl.clone()
   const useSignedCookie = cookieSecret !== ''
+  const useNextKey = process.env.USE_NEXTKEY === '1'
 
   // Prevent security issues – users should not be able to directly access
   // the pages/_* folders and their respective contents
@@ -44,8 +46,16 @@ export function middleware(req: NextRequest) {
   const jwtCookie = req.cookies.get(jwtName) ?? ''
   try {
     if (!jwtCookie) {
-      throw new Error('Cookie expected but not found')
+      if (useNextKey) {
+        // if using NextKey, cookie is required
+        throw new Error('Cookie expected but not found')
+      } else {
+        // without NextKey or cookie, serve main variation (or activeIndex variation if provided)
+        resUrl.pathname = `${pathBases[activeIndex]}${pathname}`
+        return res.rewrite(resUrl)
+      }
     } else {
+      // decode cookie when signed
       const requestJWT = useSignedCookie
         // WARNING: signedCookie throws TypeError crypto.createHmac is not a function
         ? cookieParser.signedCookie(jwtCookie.value, cookieSecret)
@@ -56,13 +66,14 @@ export function middleware(req: NextRequest) {
           : 'Unable to find jwt value in cookie')
       }
 
+      // decode jwt and serve appropriate variation based on sub
       const jwtDecoded = decodeJwt(requestJWT)
       const decodedSub = jwtDecoded.sub
       switch (decodedSub) {
         case process.env.JWT_SUB_MAIN:
           resUrl.pathname = `${pathBases[0]}${pathname}`
           return res.rewrite(resUrl)
-        case process.env.JWT_SUB_GUEST:
+        case process.env.JWT_SUB_ONE:
           resUrl.pathname = `${pathBases[1]}${pathname}`
           return res.rewrite(resUrl)
         default:

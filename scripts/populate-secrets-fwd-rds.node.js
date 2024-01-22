@@ -64,13 +64,13 @@ ssm
       const hostname = ''
       const jwtAud = ''
       const jwtIss = ''
-      const jwtSubGuest = ''
       const jwtSubMain = ''
+      const jwtSubOne = ''
       const rootPwd = ''
       const secretCookie = ''
       const secretJWT = ''
-      const secretKeyGuest = ''
       const secretKeyMain = ''
+      const secretKeyOne = ''
       const useDatabase = ''
       const useHttpsFromS3 = ''
       const useHttpsLocal = ''
@@ -84,13 +84,13 @@ ssm
         hostname,
         jwtAud,
         jwtIss,
-        jwtSubGuest,
         jwtSubMain,
+        jwtSubOne,
         rootPwd,
         secretCookie,
         secretJWT,
-        secretKeyGuest,
         secretKeyMain,
+        secretKeyOne,
         useDatabase,
         useHttpsFromS3,
         useHttpsLocal,

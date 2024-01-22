@@ -36,13 +36,14 @@
 const hostname = 'localhost'                // set to domain name in prod (this local value never read)
 const jwtAud = 'localhost'                  // set to domain name in prod
 const jwtIss = 'localhost'                  // set to domain name in prod
-const jwtSubGuest = 'guest'                 // unique value for guest variation
 const jwtSubMain = 'main_site'              // unique value for main variation
+const jwtSubOne = 'variation_one'           // unique value for variation one
 const secretCookie = ''                     // secret for signing cookie; blank to disable signing
 const secretJWT = 'secretJWT secret'        // signed secret for JWT
-const secretKeyGuest = 'guest password'     // password for guest variation
 const secretKeyMain = 'main password'       // password for main variation
+const secretKeyOne = 'password for one'     // password for variation one
 const useDatabase = '0'                     // set to '1' to enable database (also set cdkUseDatabase in cdk's .env/.secrets.js)
+const useNextKey = '1'                      // set to '1' to require NextKey to access site. '0' serves main variation without NextKey, but supports site switching at loginPath
 
 // ALSO ADD these to SSM Parameter Store (must match cdk/my-app-cdk/.env/.secrets.js):
 //
@@ -56,7 +57,7 @@ const dbDevPassword = 'change_this_password_right_away!'
 const ghaRepoName = '' // only set if repo name different from app name
 const rootPwd = '' // absolute path to project root for dev and testing
 const useHttpsFromS3 = '' // ignored in dev & test; set by cdk secrets for prod
-const useHttpsLocal = '0' // set to '1' to enable https in dev & test
+const useHttpsLocal = '0' // set to '1' to enable https in dev & test (run pnpm gencerts)
 
 module.exports = {
   dbDevPassword,
@@ -64,14 +65,15 @@ module.exports = {
   hostname,
   jwtAud,
   jwtIss,
-  jwtSubGuest,
   jwtSubMain,
+  jwtSubOne,
   rootPwd,
   secretCookie,
   secretJWT,
-  secretKeyGuest,
   secretKeyMain,
+  secretKeyOne,
   useDatabase,
   useHttpsFromS3,
   useHttpsLocal,
+  useNextKey,
 }

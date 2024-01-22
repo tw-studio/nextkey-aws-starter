@@ -12,16 +12,17 @@ const {
   hostname,
   jwtAud,
   jwtIss,
-  jwtSubGuest,
   jwtSubMain,
+  jwtSubOne,
   rootPwd,
   secretCookie,
   secretJWT,
   secretKeyMain,
-  secretKeyGuest,
+  secretKeyOne,
   useDatabase,
   useHttpsFromS3,
   useHttpsLocal,
+  useNextKey,
 } = require('./.production.secrets.js') // populated by deploy script
 
 const port = process.env.OVERRIDE_PORT ?? (useHttpsFromS3 === '1' ? '443' : '80')
@@ -37,19 +38,20 @@ const envProduction = {
   HOSTNAME: hostname ?? '',
   JWT_AUD: jwtAud ?? '',
   JWT_ISS: jwtIss ?? '',
-  JWT_SUB_GUEST: jwtSubGuest ?? '',
   JWT_SUB_MAIN: jwtSubMain ?? '',
+  JWT_SUB_ONE: jwtSubOne ?? '',
   NEXT_PUBLIC_API_MOCKING: 'disabled',
   PORT: port,
   ROOT_PWD: rootPwd ?? '/home/ubuntu/server/my-app',
   SECRET_COOKIE: secretCookie ?? '',
   SECRET_JWT: secretJWT ?? '',
-  SECRET_KEY_GUEST: secretKeyGuest ?? '',
   SECRET_KEY_MAIN: secretKeyMain ?? '',
+  SECRET_KEY_ONE: secretKeyOne ?? '',
   TRUE_ENV: 'production',
   USE_DATABASE: useDatabase ?? '0',
   USE_HTTPS_FROM_S3: useHttpsFromS3 ?? '',
   USE_HTTPS_LOCAL: useHttpsLocal ?? '0',
+  USE_NEXTKEY: useNextKey ?? '1',
 }
 
 module.exports = envProduction

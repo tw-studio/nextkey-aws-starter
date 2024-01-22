@@ -44,6 +44,7 @@ To try it locally, you will need:
 
 *   `zsh` or `bash`
 *   `wget` or `curl`
+*   `git` *(v2.28+)*
 *   `rename`
 *   `node` *(v18.x.x)*
 *   `pnpm` *(v1.x)*
@@ -58,7 +59,7 @@ Later, to deploy to AWS, you will need:
 3.  A **domain name** purchased in or imported into Amazon Route 53
 4.  A Route 53 **Hosted Zone** created for domain name
 5.  **Connection to GitHub** account/repo created in AWS Dev Tools
-6.  (Optional) **HTTPS certificate** created or imported in AWS Certificate Manager (Not recommended: only use when load balancer is needed. Requires uncommenting code in `cdk/my-app-cdk/my-app-cdk-stack.ts`. Adds additional cost after AWS Free Tier.)
+6.  (Optional) **HTTPS certificate** created or imported in AWS Certificate Manager (Not recommended: only use when load balancer is needed. Requires uncommenting code in *cdk/my-app-cdk/my-app-cdk-stack.ts*. Adds additional cost after AWS Free Tier.)
 
 (See [Preparing the AWS Prerequisites](#preparing-the-aws-prerequisites) for a detailed walkthrough)
 
@@ -79,7 +80,7 @@ Later, to deploy to AWS, you will need:
 
 ### Try the NextKey portal locally
 
-The starter is configured with **two variations** to start, initially called **main** and **guest**. These correspond to the pages stored under `src/pages/_main/` and `src/pages/_guest/` respectively. The correct password entered into the textbox will serve either the **main** or **guest** variation.
+The starter is configured with **two variations** to start, initially called **main** and **one**. These correspond to the pages stored under *src/pages/_main/* and *src/pages/_one/* respectively. The correct password entered into the textbox will serve either the **main** or **one** variation.
 
 To try this locally:
 
@@ -97,16 +98,16 @@ To try this locally:
 
 3.  Visit http://localhost:3000 in a browser
 4.  Try a few inputs
-5.  Enter `main secret` to access the **main** app variation
-6.  In the same tab, navigate to http://localhost:3000/enter via the address bar
-7.  Enter `guest secret` to access the **guest** variation
+5.  Enter `main password` to access the **main** app variation
+6.  In the same tab, navigate to http://localhost:3000/welcome via the address bar
+7.  Enter `password for one` to access variation **one**
 8.  To stop the custom Express server, it is not enough to stop the foreground process as it is run with `pm2` as a background process. Instead, run:
 
     ```sh
     $ pnpm stop
     ```
 
-### Try the variations directly
+### Locally serve the variations directly
 
 For faster development cycles, the development server can bypass the NextKey portal page and serve the desired app variation directly. Additionally, doing so will enable **hot reloading**, so that app code changes reflect in the browser immediately.
 
@@ -120,17 +121,33 @@ To run the **main** variation directly:
 
 2.  Visit http://localhost:4000
 
-To run the **guest** variation:
+To run the variation **one**:
 
 1.  Run:
 
     ```sh
-    $ pnpm dev:guest
+    $ pnpm dev:one
     ```
 
 2.  Visit http://localhost:4000
 
 To stop the hot reloading server, simply stop the foreground process with `Ctrl-C`.
+
+### Disable the NextKey portal
+
+Disabling the NextKey portal is easy to do by changing a setting. When disabled, the main website variation will be served directly, without the Nextkey password portal. 
+
+To disable the NextKey portal:
+
+1.  Open `.env/.secrets.js`
+2.  Set the value for `useNextKey` to `0` (defaults to `1`)
+3.  (Optional) Serve the development server locally to validate the behavior:
+
+    ```sh
+    $ pnpm serve:dev
+    ```
+
+4.  Visit http://localhost:3000 in a browser
 
 ### Use https locally
 
@@ -145,14 +162,14 @@ Steps to use https locally:
 
 ### Deploy to production with AWS CDK & AWS CodePipeline
 
-This starter streamlines your deployment to a fully functional and secure stack hosted on AWS and set up for **Continuous Deployment**. Your `cdk/my-app-cdk/` directory contains *Infrastructure as Code (IaC)*, a complete infrastructure stack written with the **AWS Cloud Development Kit (CDK)**, which defines and configures AWS elements in TypeScript. 
+This starter streamlines your deployment to a fully functional and secure stack hosted on AWS and set up for **Continuous Deployment**. Your *cdk/my-app-cdk/* directory contains **Infrastructure as Code (IaC)**, a complete infrastructure stack written with the **AWS Cloud Development Kit (CDK)**, which defines and configures AWS elements in TypeScript. 
 
 Once your AWS prerequisites are set up, the entire first-time stack and code deployment takes **less than 10 minutes**. All resources created by the stack **run for free** under the AWS Free Tier (which lasts 12 months from account creation) when no other resources are also running (in particular other Load Balancers, EC2, or RDS instances).
 
 Here are the steps:
 
-1.  Change directory to `cdk/my-app-cdk/`
-2.  Run `pnpm cdk:precheck` or manually rename `RENAME_TO.secrets.js` to `.secrets.js` in `cdk/my-app-cdk/.env/`
+1.  Change directory to *cdk/my-app-cdk/*
+2.  Run `pnpm cdk:precheck` or manually rename *RENAME_TO.secrets.js* to *.secrets.js* in *cdk/my-app-cdk/.env/*
 3.  Commit & push your new full project directory to a GitHub repo
 4.  Ensure the following are prepared for AWS (see [Preparing the AWS Prerequisites](#preparing-the-aws-prerequisites) for a detailed walkthrough):
     1.  An **AWS account** created
@@ -160,19 +177,20 @@ Here are the steps:
     3.  A **domain name** purchased in or imported into Amazon Route 53
     4.  A Route 53 **Hosted Zone** created for domain name
     5.  **Connection to GitHub** account/repo created in AWS Dev Tools
-    6.  (Optional) **HTTPS certificate** created or imported in AWS Certificate Manager (Not recommended: only use when load balancer is needed. Requires uncommenting code in `cdk/my-app-cdk/my-app-cdk-stack.ts`. Adds additional cost after AWS Free Tier.)
-5.  Set the proper values for these in `cdk/my-app-cdk/.env/.secrets.js`
+    6.  (Optional) **HTTPS certificate** created or imported in AWS Certificate Manager (Not recommended: only use when load balancer is needed. Requires uncommenting code in *cdk/my-app-cdk/my-app-cdk-stack.ts*. Adds additional cost after AWS Free Tier.)
+5.  Set the proper values for these in *cdk/my-app-cdk/.env/.secrets.js*
 6.  To serve your web app using free, properly signed **HTTPS** encryption:
-    1.  Navigate to `cdk/create-certs-cdk/` 
-    2.  Set the required `CDK_CERT_` values in `.env/.secrets.js`
-    3.  Decide to store values in **SSM Parameter Store** or to hardcode them in a file, then follow the instructions accordingly in `user-data/run-certbot.sh`
+    1.  Navigate to *cdk/create-certs-cdk/* 
+    2.  Set the required `CDK_CERT_` values in *.env/.secrets.js*
+    3.  Decide to store values in **SSM Parameter Store** or to hardcode them in a file, then follow the instructions accordingly in *user-data/run-certbot.sh*
     4.  Run `pnpm cdk:full` and follow any instructions
     5.  (optional) After the stack is successfully created, wait two minutes then check the S3 console to confirm the creation and upload of TLS certificate files. 
     6.  When successfully complete:
         1.  **Destroy** the stack
-        2.  Set `useHttpsFromS3` to `'1'` in `cdk/my-app-cdk/.env/.secrets.js` and in `.env/.secrets.js`
-7.  Optionally change any project secret defaults in `.env/.secrets.js`
-8.  Put all project secrets prefixed with `jwt`, `secret`, or `dbProd` in your AWS SSM Parameter Store per the steps in `.env/.secrets.js`. For example:
+        2.  Set `useHttpsFromS3` to `'1'` in *cdk/my-app-cdk/.env/.secrets.js* and in *.env/.secrets.js*
+    7.  (future) To refresh the TLS certificate files before their **3 month expiry period**, follow the instructions in *cdk/create-certs-cdk/README.md*
+7.  Optionally change any project secret defaults in *.env/.secrets.js*
+8.  Put all project secrets prefixed with `jwt`, `secret`, or `dbProd` in your AWS SSM Parameter Store per the steps in *.env/.secrets.js*. For example:
 
     ```sh
     $ aws ssm put-parameter \
@@ -181,7 +199,7 @@ Here are the steps:
       --type 'SecureString'
     ```
 
-9.  From `cdk/my-app-cdk/`, synthesize and deploy your app infrastructure stack with:
+9.  From *cdk/my-app-cdk/*, synthesize and deploy your app infrastructure stack with:
 
     ```sh
     $ pnpm cdk:full
@@ -195,7 +213,7 @@ Here are the steps:
 
 While all resources run for free under the Free Tier, it's a good practice to keep usage minimal by **regularly destroying** the **CDK stack** when not actively needing the production deployment:
 
-1.  From `cdk/my-app-cdk/`, run:
+1.  From *cdk/my-app-cdk/*, run:
 
     ```sh
     $ pnpm cdk:destroy
@@ -203,13 +221,13 @@ While all resources run for free under the Free Tier, it's a good practice to ke
 
 ## Password Variations
 
-Your `src/pages/` directory looks like this:
+Your *src/pages/* directory looks like this:
 
 ```sh
 ├── pages/
 │   ├── _app.page.tsx
 │   ├── _document.page.jsx
-│   ├── _guest/
+│   ├── _one/
 │   │   ├── index.page.tsx
 │   │   └── index.spec.ts
 │   └── _main/
@@ -217,12 +235,12 @@ Your `src/pages/` directory looks like this:
 │       └── index.spec.ts
 ```
 
-Notice the two directories `_main/` and `_guest/`. Those are the two default **app variations** that are served for **different passwords**.
+Notice the two directories `_main/` and `_one/`. Those are the two default **app variations** that are served for **different passwords**.
 
-*   To visit the pages under `_main/`, type in at the launcher page the default password: `main secret`
-*   To visit the pages under `_guest/`, type in at the launcher page the default password: `guest secret`
+*   To visit the pages under `_main/`, type in at the launcher page the default password: `main password`
+*   To visit the pages under `_one/`, type in at the launcher page the default password: `password for one`
 
-Once authenticated, the pages you have access to will *only* be those in your permitted directory. For example, after authenticating with `main secret`, you will only be served the pages under `_main/` — though they will appear to be served at the root — and you will not be able to access any pages under `_guest/`.
+Once authenticated, the pages you have access to will *only* be those in your permitted directory. For example, after authenticating with `main secret`, you will only be served the pages under `_main/` — though they will appear to be served at the root — and you will not be able to access any pages under `_one/`.
 
 You may freely add an app variation in the following way:
 
@@ -230,14 +248,14 @@ You may freely add an app variation in the following way:
 
 Let's add an app variation called `cinematic`.
 
-1.  First, create a new directory `_cinematic/` inside `src/pages/`
-2.  Next, open `src/middleware.page.ts` and change the following:
+1.  First, create a new directory *_cinematic/* inside *src/pages/*
+2.  Next, open *src/middleware.page.ts* and change the following:
     1.  Add the path `_cinematic/` to the array `pathBases`:
 
         ```js
         const pathBases = [
           '/_main',
-          '/_guest',
+          '/_one',
           '/_cinematic',
         ]
         ```
@@ -262,7 +280,7 @@ Let's add an app variation called `cinematic`.
         // ...
         ```
 
-3.  Now let's add that mystery environment variable and one other. Open `.env/.secrets.js`, and add **two environment variables**:
+3.  Now let's add that mystery environment variable and one other. Open *.env/.secrets.js*, and add **two environment variables**:
 
     ```js
     const jwtSubCinematic = 'cinematic' // a unique permissions identifier that no one will see        
@@ -275,7 +293,7 @@ Let's add an app variation called `cinematic`.
     }
     ```
 
-4.  Open `.env/common.env.js`, and add **two entries**:
+4.  Open *.env/common.env.js*, and add **two entries**:
 
     ```js
     const envCommon = {
@@ -284,7 +302,7 @@ Let's add an app variation called `cinematic`.
     }
     ```
 
-5.  Open `.env/production.env.js`, and add:
+5.  Open *.env/production.env.js*, and add:
 
     ```js
     const {
@@ -298,8 +316,8 @@ Let's add an app variation called `cinematic`.
     }
     ```
 
-6.  Make those same additions to `.env/development.env.js` and `.env/testing.env.js`
-7.  With that complete, open `server/index.ts`, initialize the new variables and modify the switch statement in `unlockWithKey()`::
+6.  Make those same additions to *.env/development.env.js* and *.env/testing.env.js*
+7.  With that complete, open *server/index.ts*, initialize the new variables and modify the switch statement in `unlockWithKey()`::
 
     ```js
     // initializing variables:
@@ -311,8 +329,8 @@ Let's add an app variation called `cinematic`.
       case secretKeyMain:
         jwtSub = jwtSubMain
         break
-      case secretKeyGuest:
-        jwtSub = jwtSubGuest
+      case secretKeyOne:
+        jwtSub = jwtSubOne
         break
       case secretKeyCinematic:
         jwtSub = jwtSubCinematic
@@ -330,11 +348,11 @@ Let's add an app variation called `cinematic`.
     $ aws ssm put-parameter --name "/my-app/prod/secretKeyCinematic" --value "<value>" --type "SecureString"
     ```
 
-9.  That's it! Run the server locally with `pnpm serve:dev` to try it. Then to test in production, create pages under `_cinematic/`, commit & push your changes to GitHub, wait a few minutes for your changes to deploy, then visit your domain to check the result.
+9.  That's it! Run the server locally with `pnpm serve:dev` to try it. Then to test in production, create pages under *_cinematic/*, commit & push your changes to GitHub, wait a few minutes for your changes to deploy, then visit your domain to check the result.
 
 ## Preparing the AWS Prerequisites
 
-To configure your app for deployment to AWS, you will need to provide these six values in `cdk/my-app-cdk/.env/.secrets.js`:
+To configure your app for deployment to AWS, you will need to provide these six values in *cdk/my-app-cdk/.env/.secrets.js*:
 
 ```js
 const cdkGitHubConnectionArn = ''
@@ -471,7 +489,7 @@ Run `pnpm db:dev:setup` to be guided through unmet steps for running a *Postgres
 The setup script will list several next steps that can be explored:
 
 * Control database migrations with `pnpm db:dev:flyway` commands, ex: `pnpm db:dev:flyway migrate`
-* Modify database content and data models in `db/migrations/` and `models/`
+* Modify database content and data models in *db/migrations/* and *models/*
 * Connect to postgres when needed with `pnpm db:dev:connect:psql`
 * Run unit tests on the demo database with `pnpm jest:db`
 * Run unit tests on the demo data models with `pnpm jest:models`
@@ -480,7 +498,7 @@ The setup script will list several next steps that can be explored:
 
 A quick way to understand how all the pieces fit together is with an illustration of a typical workflow of making a change to the database:
 
-1.  You're working on version *0.0.0* of your app. You create a new sql file in `db/migrations` with a title following a very specific format, such as `V0.0.0_0__My_awesome_database.sql` (see [Flyway Migrations](https://flywaydb.org/documentation/concepts/migrations.html) for their naming conventions and requirements).
+1.  You're working on version *0.0.0* of your app. You create a new sql file in *db/migrations* with a title following a very specific format, such as `V0.0.0_0__My_awesome_database.sql` (see [Flyway Migrations](https://flywaydb.org/documentation/concepts/migrations.html) for their naming conventions and requirements).
 
 2.  You write the changes you want to make to your database in *sql*, for example:
 
@@ -498,13 +516,13 @@ A quick way to understand how all the pieces fit together is with an illustratio
 
 5.  (Optional) You want to interact with the local database directly. You make sure `postgresql` is installed, and you run `pnpm db:dev:connect:psql` to connect to the local database with `psql`. 
 
-6.  In your Next.js pages and components, you interface with your database primarily through Objection.js Models which you create in the `models/` directory. You create `models/AwesomeThings.js`, which defines a model for your database table per the guidelines at [Objection.js](https://vincit.github.io/objection.js/). You sometimes may interface with the database more directly by importing and using the `db/knex` object.
+6.  In your Next.js pages and components, you interface with your database primarily through Objection.js Models which you create in the *models/* directory. You create *models/AwesomeThings.js*, which defines a model for your database table per the guidelines at [Objection.js](https://vincit.github.io/objection.js/). You sometimes may interface with the database more directly by importing and using the *db/knex* object.
 
 7.  You write your pages' database queries as much as possible inside `getServerSideProps()` to achieve *server-side rendering*. (See [Data Fetching: getServerSideProps](https://nextjs.org/docs/basic-features/data-fetching/get-server-side-props)) 
 
-8.  You run `pnpm dev` to interact with your app in the browser. `pnpm dev` will also run all migrations found in `db/migrations/` on the locally running Postgres container.
+8.  You run `pnpm dev` to interact with your app in the browser. `pnpm dev` will also run all migrations found in *db/migrations/* on the locally running Postgres container.
 
-9.  You write tests for your database in `db/test/` and tests for your models in `models/`. These will automatically be discovered when running `pnpm jest` and the `pnpm jest:all:` variants. You can also run them specifically with `pnpm jest:db` and `pnpm jest:models`.
+9.  You write tests for your database in *db/test/* and tests for your models in *models/*. These will automatically be discovered when running `pnpm jest` and the `pnpm jest:all:` variants. You can also run them specifically with `pnpm jest:db` and `pnpm jest:models`.
 
 10. (Optional) Your database and migration files look good and you're ready to check in your changes. You push your changes to a development branch then create a Pull Request into *main*. This triggers a [GitHub Actions](https://docs.github.com/en/actions) workflow which sets up all dependencies, including Flyway and Postgres, and ultimately runs `pnpm jest:all:PR` to run all discoverable Jest tests.
 
@@ -531,7 +549,7 @@ This starter includes basic support for **feature flags** to support [trunk-base
 
 To illustrate, when beginning a new feature, you can:
 
-1.  Add a new flag in `.env/development.flags.js` with name `FLAG_NEW_FEATURE` and set its value to `'on'`:
+1.  Add a new flag in *.env/development.flags.js* with name `FLAG_NEW_FEATURE` and set its value to `'on'`:
 
     ```js
     // .env/development.flags.js
@@ -567,7 +585,7 @@ To illustrate, when beginning a new feature, you can:
     ```
     
 4.  Commit this code into the trunk knowing it **won't affect production code**.
-5.  When ready to **enable in production**, add the appropriate flag in `.env/production.flags.js` and push to remote master:
+5.  When ready to **enable in production**, add the appropriate flag in *.env/production.flags.js* and push to remote master:
 
     ```js
     // .env/production.flags.js
